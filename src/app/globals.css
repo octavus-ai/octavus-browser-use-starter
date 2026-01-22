@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-slate-700;
+  }
+
+  html {
+    @apply bg-slate-950;
+    overscroll-behavior: none;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100;
+    overscroll-behavior: none;
+  }
+}
+
+/* =============================================================================
+   Chat Component Styles
+   Customize these to match your brand
+   ============================================================================= */
+
+@layer components {
+  /* Chat container */
+  .chat-container {
+    /* Container styles are in the component for full control */
+  }
+
+  /* Messages */
+  .message {
+    /* Base message styles */
+  }
+
+  .message--user {
+    /* User message overrides */
+  }
+
+  .message--assistant {
+    /* Assistant message overrides */
+  }
+
+  .message-content {
+    /* Message content area */
+  }
+
+  /* Reasoning block (AI thinking) */
+  .reasoning-block {
+    /* Reasoning block styles are in the component */
+  }
+
+  /* Tool call card */
+  .tool-call {
+    /* Tool call card styles */
+  }
+
+  /* Operation card */
+  .operation {
+    /* Operation card styles */
+  }
+
+  /* File preview */
+  .file-preview {
+    /* File preview styles */
+  }
+
+  /* Status badge */
+  .status-badge {
+    /* Status badge styles */
+  }
+
+  /* Chat input */
+  .chat-input {
+    /* Input field styles */
+  }
+}

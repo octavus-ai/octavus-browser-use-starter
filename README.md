@@ -1,0 +1,198 @@
+# Octavus Starter - Next.js
+
+A minimal Next.js starter template for building agentic applications with [Octavus](https://octavus.ai).
+
+## Features
+
+- **Streaming Chat** - Real-time streaming responses with thinking blocks, tool calls, and file attachments
+- **File Uploads** - Upload images and documents directly in the chat interface
+- **Error Handling** - User-friendly error display with retry information
+- **Extensible** - Add custom tools, resources, and object renderers
+
+## Quick Start
+
+### 1. Clone and Install
+
+```bash
+# Clone this template
+npx degit octavus-ai/octavus-starter-nextjs my-agent-app
+cd my-agent-app
+
+# Install dependencies
+npm install
+```
+
+### 2. Configure Environment
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+```
+
+Edit `.env` and add your Octavus credentials:
+
+```env
+OCTAVUS_API_URL="https://api.octavus.ai"
+OCTAVUS_API_KEY=your-api-key-here
+OCTAVUS_AGENT_ID=your-agent-id-here
+```
+
+- Get your API key from [octavus.ai/settings/api-keys](https://octavus.ai/settings/api-keys)
+- Get your agent ID from the agent settings page or by running `octavus agents list`
+
+### 3. Sync Your Agent
+
+The template includes an example agent in `agents/my-agent/`. To use your own agent:
+
+1. **Option A**: Download from Octavus UI and place in `agents/` directory
+2. **Option B**: Use the CLI to sync:
+
+```bash
+npm run agents:sync
+```
+
+### 4. Run Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see your agent in action.
+
+## Project Structure
+
+```
+├── agents/
+│   └── my-agent/              # Example agent configuration
+│       ├── prompts/
+│       │   ├── system.md      # System prompt
+│       │   └── user-message.md
+│       └── protocol.yaml      # Agent protocol definition
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx           # Landing page with "Start Chat" button
+│   │   ├── globals.css        # Global styles + chat component overrides
+│   │   ├── chat/
+│   │   │   └── [sessionId]/
+│   │   │       └── page.tsx   # Chat page
+│   │   └── api/
+│   │       ├── trigger/       # Proxies triggers to Octavus
+│   │       │   └── route.ts
+│   │       └── upload-urls/   # Gets presigned URLs for file uploads
+│   │           └── route.ts
+│   ├── features/
+│   │   └── chat/              # Chat UI components
+│   │       ├── chat-interface.tsx
+│   │       ├── message-bubble.tsx
+│   │       ├── reasoning-block.tsx
+│   │       ├── tool-call-card.tsx
+│   │       └── operation-card.tsx
+│   └── lib/
+│       ├── octavus.ts         # Octavus client factory
+│       ├── server-config.ts   # Environment configuration
+│       └── agents/            # Agent tool handlers
+│           ├── index.ts
+│           ├── types.ts
+│           └── my-agent.ts    # Example agent tools
+└── package.json
+```
+
+## Customization
+
+### Adding Tools
+
+Edit `src/lib/agents/my-agent.ts` to add tool handlers:
+
+```typescript
+const tools: ToolHandlers = {
+  'my-custom-tool': async (args) => {
+    // Your tool implementation
+    return { result: 'Success' };
+  },
+};
+```
+
+Make sure the tool is defined in your agent's `protocol.yaml`.
+
+### Adding Resources
+
+Resources persist state across the session:
+
+```typescript
+class MyResource extends Resource {
+  readonly name = 'MY_RESOURCE';
+
+  onUpdate(value: unknown): void {
+    // Handle resource updates (save to DB, send webhook, etc.)
+    console.log('Resource updated:', value);
+  }
+}
+
+export const myAgentConfig: AgentConfig = {
+  slug: 'my-agent',
+  tools,
+  resources: [new MyResource()],
+};
+```
+
+### Styling
+
+The chat components use Tailwind CSS. Customize the look by:
+
+1. **Editing `globals.css`** - Override the semantic CSS classes
+2. **Modifying components** - Edit files in `src/features/chat/`
+3. **Theme configuration** - Update `tailwind.config.ts`
+
+### Custom Object Renderers
+
+For structured output types, create custom renderers:
+
+```typescript
+import type { ObjectRenderer } from '@/features/chat';
+
+const MyCustomRenderer: ObjectRenderer = ({ part, onSuggestionClick }) => {
+  const data = part.object as MyCustomType;
+  return (
+    <div className="custom-card">
+      {/* Your custom rendering */}
+    </div>
+  );
+};
+
+// Pass to ChatInterface
+<ChatInterface
+  objectRenderers={{
+    MyCustomType: MyCustomRenderer,
+  }}
+/>
+```
+
+## API Reference
+
+### ChatInterface Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `sessionId` | `string` | The Octavus session ID |
+| `agentId` | `string` | The agent ID from the Octavus platform |
+| `initialMessages` | `UIMessage[]?` | Optional initial messages |
+| `objectRenderers` | `ObjectRendererRegistry?` | Custom renderers for structured outputs |
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OCTAVUS_API_URL` | No | Octavus API URL (default: https://api.octavus.ai) |
+| `OCTAVUS_API_KEY` | Yes | Your Octavus API key |
+| `OCTAVUS_AGENT_ID` | Yes | The agent ID to use for new sessions |
+
+## Learn More
+
+- [Octavus Documentation](https://docs.octavus.ai)
+- [Protocol Reference](https://docs.octavus.ai/protocol)
+- [SDK Reference](https://docs.octavus.ai/sdk)
+
+## License
+
+MIT

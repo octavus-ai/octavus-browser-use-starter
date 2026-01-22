@@ -1,0 +1,83 @@
+# My Agent Protocol
+# A simple chat agent to get you started
+
+# Input - provided when starting the agent
+input:
+  COMPANY_NAME:
+    type: string
+    description: Your company name
+
+  USER_ID:
+    type: string
+    description: The current user's ID
+    optional: true
+
+# Resources - persisted state the agent can read and write
+resources:
+  CONVERSATION_SUMMARY:
+    type: string
+    description: Running summary of the conversation
+    default: ""
+
+# Triggers - how the agent can be invoked
+triggers:
+  user-message:
+    description: User sends a chat message
+    input:
+      USER_MESSAGE:
+        type: string
+        description: The user's message
+      FILES:
+        type: file[]
+        optional: true
+        description: Documents or images for analysis (PDFs, images, text files)
+
+# Tools - provided by your application
+tools:
+  get-user-account:
+    description: Looking up account information
+    display: description
+    parameters:
+      userId:
+        type: string
+        description: The user ID to look up
+
+  create-support-ticket:
+    description: Creating a support ticket
+    display: description
+    parameters:
+      summary:
+        type: string
+        description: Summary of the issue
+      priority:
+        type: string
+        description: "Priority level: low, medium, high, urgent"
+
+# Agent configuration
+agent:
+  model: anthropic/claude-sonnet-4-5
+  system: system
+  input:
+    - COMPANY_NAME
+    - USER_ID
+  tools:
+    - get-user-account
+    - create-support-ticket
+  agentic: true
+  maxSteps: 10
+
+# Handlers - what happens when triggers fire
+handlers:
+  user-message:
+    Add user message:
+      block: add-message
+      role: user
+      prompt: user-message
+      input:
+        - USER_MESSAGE
+      files:
+        - FILES
+      display: hidden
+
+    Respond to user:
+      block: next-message
