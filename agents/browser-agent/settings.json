@@ -1,0 +1,6 @@
+{
+  "slug": "browser-agent",
+  "name": "Browser Agent",
+  "description": "An agent that can browse the web, interact with pages, and extract information.",
+  "format": "interactive"
+}

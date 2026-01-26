@@ -1,13 +1,14 @@
-# Octavus Starter - Next.js
+# Octavus Browser Use Starter
 
-A minimal Next.js starter template for building agentic applications with [Octavus](https://octavus.ai).
+A minimal Next.js starter template for building **browser automation agents** with [Octavus](https://octavus.ai). This agent can navigate websites, click elements, fill forms, take screenshots, and extract information.
 
 ## Features
 
-- **Streaming Chat** - Real-time streaming responses with thinking blocks, tool calls, and file attachments
-- **File Uploads** - Upload images and documents directly in the chat interface
-- **Error Handling** - User-friendly error display with retry information
-- **Extensible** - Add custom tools, resources, and object renderers
+- **Browser Automation** - Navigate, click, fill forms, and interact with any website
+- **Screenshots** - Capture and display page screenshots in the chat
+- **Text Extraction** - Extract text content from pages or specific elements
+- **HTML Analysis** - Get simplified HTML structure for understanding page layout
+- **Session Persistence** - Browser state persists across tool calls within a session
 
 ## Quick Start
 
@@ -15,11 +16,14 @@ A minimal Next.js starter template for building agentic applications with [Octav
 
 ```bash
 # Clone this template
-npx degit octavus-ai/octavus-starter-nextjs my-agent-app
-cd my-agent-app
+npx degit octavus-ai/octavus-browser-use-starter my-browser-agent
+cd my-browser-agent
 
 # Install dependencies
 npm install
+
+# Install Playwright browsers
+npx playwright install chromium
 ```
 
 ### 2. Configure Environment
@@ -37,15 +41,9 @@ OCTAVUS_API_KEY=your-api-key-here
 OCTAVUS_AGENT_ID=your-agent-id-here
 ```
 
-- Get your API key from [octavus.ai/settings/api-keys](https://octavus.ai/settings/api-keys)
-- Get your agent ID from the agent settings page or by running `octavus agents list`
-
 ### 3. Sync Your Agent
 
-The template includes an example agent in `agents/my-agent/`. To use your own agent:
-
-1. **Option A**: Download from Octavus UI and place in `agents/` directory
-2. **Option B**: Use the CLI to sync:
+Upload the browser agent to Octavus:
 
 ```bash
 npm run agents:sync
@@ -57,141 +55,111 @@ npm run agents:sync
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your agent in action.
+Open [http://localhost:3000](http://localhost:3000) and try asking the agent to:
+
+- "Go to example.com and tell me what you see"
+- "Navigate to news.ycombinator.com and get the top 5 headlines"
+- "Go to google.com and search for 'octavus ai'"
+
+## Browser Tools
+
+| Tool | Description |
+|------|-------------|
+| `browser-navigate` | Navigate to a URL |
+| `browser-click` | Click an element by CSS selector |
+| `browser-fill` | Fill a form field with text |
+| `browser-screenshot` | Capture a screenshot of the page |
+| `browser-get-text` | Extract text content from page/element |
+| `browser-get-html` | Get HTML structure for analysis |
 
 ## Project Structure
 
 ```
 ├── agents/
-│   └── my-agent/              # Example agent configuration
+│   └── browser-agent/
 │       ├── prompts/
-│       │   ├── system.md      # System prompt
-│       │   └── user-message.md
-│       └── protocol.yaml      # Agent protocol definition
+│       │   └── system.md         # Browser agent system prompt
+│       └── protocol.yaml         # Agent protocol with browser tools
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx           # Landing page with "Start Chat" button
-│   │   ├── globals.css        # Global styles + chat component overrides
-│   │   ├── chat/
-│   │   │   └── [sessionId]/
-│   │   │       └── page.tsx   # Chat page
-│   │   └── api/
-│   │       ├── trigger/       # Proxies triggers to Octavus
-│   │       │   └── route.ts
-│   │       └── upload-urls/   # Gets presigned URLs for file uploads
-│   │           └── route.ts
-│   ├── features/
-│   │   └── chat/              # Chat UI components
-│   │       ├── chat-interface.tsx
-│   │       ├── message-bubble.tsx
-│   │       ├── reasoning-block.tsx
-│   │       ├── tool-call-card.tsx
-│   │       └── operation-card.tsx
+│   │   ├── api/
+│   │   │   └── trigger/
+│   │   │       └── route.ts      # Creates browser tools per session
+│   │   └── chat/
+│   │       └── [sessionId]/
+│   │           └── page.tsx
 │   └── lib/
-│       ├── octavus.ts         # Octavus client factory
-│       ├── server-config.ts   # Environment configuration
-│       └── agents/            # Agent tool handlers
-│           ├── index.ts
-│           ├── types.ts
-│           └── my-agent.ts    # Example agent tools
+│       └── agents/
+│           ├── browser-agent.ts  # Playwright tool implementations
+│           └── index.ts
 └── package.json
 ```
 
+## How It Works
+
+1. **Session-based browsers** - Each chat session gets its own browser instance that persists across tool calls
+2. **Tool handlers** - Browser tools are implemented using Playwright and execute on your server
+3. **Screenshots** - Captured as base64 data URLs and returned in tool results
+4. **Auto-cleanup** - Inactive browser sessions are cleaned up after 10 minutes
+
 ## Customization
 
-### Adding Tools
+### Adding More Browser Tools
 
-Edit `src/lib/agents/my-agent.ts` to add tool handlers:
-
-```typescript
-const tools: ToolHandlers = {
-  'my-custom-tool': async (args) => {
-    // Your tool implementation
-    return { result: 'Success' };
-  },
-};
-```
-
-Make sure the tool is defined in your agent's `protocol.yaml`.
-
-### Adding Resources
-
-Resources persist state across the session:
+Edit `src/lib/agents/browser-agent.ts` to add new tools:
 
 ```typescript
-class MyResource extends Resource {
-  readonly name = 'MY_RESOURCE';
-
-  onUpdate(value: unknown): void {
-    // Handle resource updates (save to DB, send webhook, etc.)
-    console.log('Resource updated:', value);
-  }
-}
-
-export const myAgentConfig: AgentConfig = {
-  slug: 'my-agent',
-  tools,
-  resources: [new MyResource()],
-};
+'browser-scroll': async (args) => {
+  const { page } = await getBrowserSession(sessionId);
+  await page.evaluate((y) => window.scrollBy(0, y), args.pixels);
+  return { success: true };
+},
 ```
 
-### Styling
+Don't forget to add the tool definition in `agents/browser-agent/protocol.yaml`.
 
-The chat components use Tailwind CSS. Customize the look by:
+### Changing Browser Settings
 
-1. **Editing `globals.css`** - Override the semantic CSS classes
-2. **Modifying components** - Edit files in `src/features/chat/`
-3. **Theme configuration** - Update `tailwind.config.ts`
-
-### Custom Object Renderers
-
-For structured output types, create custom renderers:
+Modify the browser launch options in `browser-agent.ts`:
 
 ```typescript
-import type { ObjectRenderer } from '@/features/chat';
-
-const MyCustomRenderer: ObjectRenderer = ({ part, onSuggestionClick }) => {
-  const data = part.object as MyCustomType;
-  return (
-    <div className="custom-card">
-      {/* Your custom rendering */}
-    </div>
-  );
-};
-
-// Pass to ChatInterface
-<ChatInterface
-  objectRenderers={{
-    MyCustomType: MyCustomRenderer,
-  }}
-/>
+const browser = await chromium.launch({
+  headless: false,  // Show browser window for debugging
+  slowMo: 100,      // Slow down actions for visibility
+});
 ```
 
-## API Reference
+### Using Different Browsers
 
-### ChatInterface Props
+Playwright supports Chromium, Firefox, and WebKit:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `sessionId` | `string` | The Octavus session ID |
-| `agentId` | `string` | The agent ID from the Octavus platform |
-| `initialMessages` | `UIMessage[]?` | Optional initial messages |
-| `objectRenderers` | `ObjectRendererRegistry?` | Custom renderers for structured outputs |
+```typescript
+import { firefox } from 'playwright';
+const browser = await firefox.launch({ headless: true });
+```
 
-### Environment Variables
+## Deployment Notes
+
+When deploying to production:
+
+1. **Playwright browsers** - Ensure Playwright browsers are installed in your deployment environment
+2. **Memory** - Browser instances use significant memory; monitor and adjust session limits
+3. **Timeouts** - Consider your serverless function timeout limits for long-running browser operations
+
+For serverless deployments (Vercel, etc.), consider using a browser service like [Browserless](https://browserless.io) or running on a dedicated server.
+
+## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OCTAVUS_API_URL` | No | Octavus API URL (default: https://api.octavus.ai) |
 | `OCTAVUS_API_KEY` | Yes | Your Octavus API key |
-| `OCTAVUS_AGENT_ID` | Yes | The agent ID to use for new sessions |
+| `OCTAVUS_AGENT_ID` | Yes | The agent ID for the browser agent |
 
 ## Learn More
 
 - [Octavus Documentation](https://docs.octavus.ai)
-- [Protocol Reference](https://docs.octavus.ai/protocol)
-- [SDK Reference](https://docs.octavus.ai/sdk)
+- [Playwright Documentation](https://playwright.dev/docs/intro)
 
 ## License
 

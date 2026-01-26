@@ -1,4 +1,4 @@
-import { MessageSquare, Zap, Code2 } from 'lucide-react';
+import { Globe, Camera, MousePointer, FileText } from 'lucide-react';
 import { getOctavusClient } from '@/lib/octavus';
 import { getDefaultAgentId } from '@/lib/server-config';
 import { StartChatButton } from './start-chat-button';
@@ -7,28 +7,54 @@ export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="mb-4 text-4xl font-bold text-white">Octavus Starter</h1>
+        <h1 className="mb-4 text-4xl font-bold text-white">
+          Browser Automation Agent
+        </h1>
         <p className="mb-8 text-lg text-slate-400">
-          A Next.js template for building agentic applications with Octavus
+          Navigate websites, fill forms, take screenshots, and extract
+          information using natural language
         </p>
 
         <StartChatForm />
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-3">
+        <div className="mt-12 text-left">
+          <p className="mb-3 text-sm font-medium text-slate-500">Try asking:</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              'Go to example.com and tell me what you see',
+              'Search Google for "octavus ai"',
+              'Get the top headlines from Hacker News',
+            ].map((example) => (
+              <span
+                key={example}
+                className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm text-slate-300"
+              >
+                {example}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <FeatureCard
-            icon={<MessageSquare className="h-6 w-6" />}
-            title="Streaming Chat"
-            description="Real-time streaming responses with thinking, tools, and files"
+            icon={<Globe className="h-6 w-6" />}
+            title="Navigate"
+            description="Go to any URL and browse the web"
           />
           <FeatureCard
-            icon={<Zap className="h-6 w-6" />}
-            title="File Uploads"
-            description="Upload images and documents directly in the chat"
+            icon={<MousePointer className="h-6 w-6" />}
+            title="Interact"
+            description="Click buttons, fill forms, and type text"
           />
           <FeatureCard
-            icon={<Code2 className="h-6 w-6" />}
-            title="Extensible"
-            description="Add custom tools, resources, and object renderers"
+            icon={<Camera className="h-6 w-6" />}
+            title="Screenshot"
+            description="Capture and display page screenshots"
+          />
+          <FeatureCard
+            icon={<FileText className="h-6 w-6" />}
+            title="Extract"
+            description="Get text and HTML from any page"
           />
         </div>
       </div>

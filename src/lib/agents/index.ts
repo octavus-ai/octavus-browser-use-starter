@@ -1,16 +1,18 @@
 /**
  * Agent Configuration Registry
  *
- * Add new agents by creating a config file and adding to AGENT_CONFIGS.
+ * For the browser agent, tools are created dynamically per-request
+ * to maintain browser session state.
  */
 
 import type { AgentConfig, AgentConfigRegistry } from './types';
-import { myAgentConfig } from './my-agent';
+import { browserAgentConfig, createBrowserTools } from './browser-agent';
 
 export type { AgentConfig, AgentConfigRegistry } from './types';
+export { createBrowserTools } from './browser-agent';
 
 // Register your agents here, keyed by agent ID from Octavus platform
-const AGENT_CONFIGS: AgentConfig[] = [myAgentConfig];
+const AGENT_CONFIGS: AgentConfig[] = [browserAgentConfig];
 
 const configRegistry: AgentConfigRegistry = Object.fromEntries(
   AGENT_CONFIGS.map((config) => [config.agentId, config])

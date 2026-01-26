@@ -2,13 +2,13 @@
  * Agent Trigger API Route
  *
  * Proxies trigger requests to the Octavus platform and streams responses.
- * This keeps your API key secure on the server.
+ * Creates browser tools dynamically to maintain session state.
  */
 
 import type { NextRequest } from 'next/server';
 import { toSSEStream } from '@octavus/server-sdk';
 import { getOctavusClient } from '@/lib/octavus';
-import { getAgentConfig } from '@/lib/agents';
+import { getAgentConfig, createBrowserTools } from '@/lib/agents';
 
 interface TriggerRequest {
   sessionId: string;
@@ -31,12 +31,18 @@ export async function POST(request: NextRequest) {
 
     const client = getOctavusClient();
 
-    // Get agent-specific configuration (tools, resources)
+    // Get agent-specific configuration
     const agentConfig = getAgentConfig(agentId);
 
-    // Attach to session with agent-specific tools and resources
+    // Create browser tools with session context for state persistence
+    const browserTools = createBrowserTools(sessionId);
+
+    // Attach to session with browser tools
     const session = client.agentSessions.attach(sessionId, {
-      tools: agentConfig?.tools ?? {},
+      tools: {
+        ...browserTools,
+        ...(agentConfig?.tools ?? {}),
+      },
       resources: agentConfig?.resources ?? [],
     });
 

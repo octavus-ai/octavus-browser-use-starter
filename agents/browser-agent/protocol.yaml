@@ -1,0 +1,103 @@
+# Browser Use Agent Protocol
+# An agent that can browse the web, interact with pages, and extract information
+
+# Input - provided when starting the agent
+input:
+  TASK_DESCRIPTION:
+    type: string
+    description: Description of the browsing task
+    optional: true
+
+# Triggers - how the agent can be invoked
+triggers:
+  user-message:
+    description: User sends a chat message
+    input:
+      USER_MESSAGE:
+        type: string
+        description: The user's message
+
+# Tools - browser automation capabilities
+tools:
+  browser-navigate:
+    description: Navigating to a web page
+    display: description
+    parameters:
+      url:
+        type: string
+        description: The URL to navigate to
+
+  browser-click:
+    description: Clicking an element on the page
+    display: description
+    parameters:
+      selector:
+        type: string
+        description: CSS selector of the element to click
+
+  browser-fill:
+    description: Filling a form field
+    display: description
+    parameters:
+      selector:
+        type: string
+        description: CSS selector of the input field
+      value:
+        type: string
+        description: Value to enter in the field
+
+  browser-get-text:
+    description: Extracting text content from the page
+    display: description
+    parameters:
+      selector:
+        type: string
+        optional: true
+        description: CSS selector to extract from (extracts all visible text if omitted)
+
+  browser-get-html:
+    description: Getting page structure (headings, links, buttons, forms, inputs)
+    display: description
+    parameters:
+      selector:
+        type: string
+        optional: true
+        description: CSS selector to scope extraction (extracts from full page if omitted)
+
+# Skills - built-in Octavus capabilities
+skills:
+  screenshot:
+    display: description
+    description: Taking screenshots of web pages
+
+# Agent configuration
+agent:
+  model: anthropic/claude-sonnet-4-5
+  system: system
+  input:
+    - TASK_DESCRIPTION
+  tools:
+    - browser-navigate
+    - browser-click
+    - browser-fill
+    - browser-get-text
+    - browser-get-html
+  skills:
+    - screenshot
+  agentic: true
+  maxSteps: 20
+  thinking: medium
+
+# Handlers - what happens when triggers fire
+handlers:
+  user-message:
+    Add user message:
+      block: add-message
+      role: user
+      prompt: user-message
+      input:
+        - USER_MESSAGE
+      display: hidden
+
+    Respond to user:
+      block: next-message
