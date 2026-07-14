@@ -6,7 +6,7 @@
  */
 
 import type { AgentConfig, AgentConfigRegistry } from './types';
-import { browserAgentConfig, createBrowserTools } from './browser-agent';
+import { browserAgentConfig } from './browser-agent';
 
 export type { AgentConfig, AgentConfigRegistry } from './types';
 export { createBrowserTools } from './browser-agent';

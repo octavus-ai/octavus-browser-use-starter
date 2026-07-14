@@ -1,33 +1,91 @@
 /**
  * Agent Trigger API Route
  *
- * Proxies trigger requests to the Octavus platform and streams responses.
- * Creates browser tools dynamically to maintain session state.
+ * Proxies trigger and continuation requests to the Octavus platform and streams
+ * responses via SSE. Creates browser tools dynamically to maintain session state.
  */
 
 import type { NextRequest } from 'next/server';
+import { z } from 'zod';
 import { toSSEStream } from '@octavus/server-sdk';
 import { getOctavusClient } from '@/lib/octavus';
 import { getAgentConfig, createBrowserTools } from '@/lib/agents';
 
-interface TriggerRequest {
-  sessionId: string;
-  agentId: string;
-  triggerName: string;
-  input?: Record<string, unknown>;
-}
+/**
+ * Tool results echoed back on continuation. Mirrors the SDK's `ToolResult` so
+ * every field survives the round-trip - most importantly `error` (set when a
+ * client tool is cancelled or throws) and the worker/thread routing fields -
+ * rather than being silently dropped by validation.
+ */
+const fileReferenceSchema = z.object({
+  id: z.string(),
+  mediaType: z.string(),
+  url: z.string(),
+  filename: z.string().optional(),
+  size: z.number().optional(),
+});
 
+const toolResultSchema = z.object({
+  toolCallId: z.string().min(1),
+  toolName: z.string().optional(),
+  result: z.unknown().optional(),
+  error: z.string().optional(),
+  files: z.array(fileReferenceSchema).optional(),
+  outputVariable: z.string().optional(),
+  blockIndex: z.number().optional(),
+  thread: z.string().optional(),
+  workerId: z.string().optional(),
+});
+
+/** Trigger a new agent turn */
+const triggerRequestSchema = z.object({
+  sessionId: z.string().min(1),
+  agentId: z.string().min(1),
+  type: z.literal('trigger'),
+  triggerName: z.string().min(1),
+  input: z.record(z.string(), z.unknown()).optional(),
+});
+
+/** Continue execution after client-side tool handling */
+const continueRequestSchema = z.object({
+  sessionId: z.string().min(1),
+  agentId: z.string().min(1),
+  type: z.literal('continue'),
+  executionId: z.string().min(1),
+  toolResults: z.array(toolResultSchema).min(1),
+});
+
+/** Combined schema for all request types */
+const requestBodySchema = z.discriminatedUnion('type', [
+  triggerRequestSchema,
+  continueRequestSchema,
+]);
+
+/**
+ * POST /api/trigger - Handle agent requests (trigger or continuation)
+ *
+ * Request body:
+ * - Trigger: { sessionId, agentId, type: 'trigger', triggerName, input? }
+ * - Continue: { sessionId, agentId, type: 'continue', executionId, toolResults }
+ *
+ * Response: SSE stream of agent events
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as TriggerRequest;
-    const { sessionId, agentId, triggerName, input } = body;
+    const body: unknown = await request.json();
+    const parsed = requestBodySchema.safeParse(body);
 
-    if (!sessionId || !agentId || !triggerName) {
+    if (!parsed.success) {
       return Response.json(
-        { error: 'Missing required fields: sessionId, agentId, triggerName' },
+        {
+          error: 'Invalid request body',
+          details: parsed.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
+
+    const { sessionId, agentId, ...sessionRequest } = parsed.data;
 
     const client = getOctavusClient();
 
@@ -43,10 +101,10 @@ export async function POST(request: NextRequest) {
         ...browserTools,
         ...(agentConfig?.tools ?? {}),
       },
-      resources: agentConfig?.resources ?? [],
     });
 
-    const events = session.trigger(triggerName, input, {
+    // execute() handles both triggers and client tool continuations
+    const events = session.execute(sessionRequest, {
       signal: request.signal,
     });
 
