@@ -12,6 +12,8 @@ A minimal Next.js starter template for building **browser automation agents** wi
 
 ## Quick Start
 
+Requires Node.js 22+.
+
 ### 1. Clone and Install
 
 ```bash
@@ -36,18 +38,21 @@ cp .env.example .env
 Edit `.env` and add your Octavus credentials:
 
 ```env
-OCTAVUS_API_URL="https://api.octavus.ai"
+OCTAVUS_API_URL=https://octavus.ai
 OCTAVUS_API_KEY=your-api-key-here
 OCTAVUS_AGENT_ID=your-agent-id-here
 ```
 
 ### 3. Sync Your Agent
 
-Upload the browser agent to Octavus:
+Validate the browser agent and upload it to Octavus:
 
 ```bash
+npm run agents:validate
 npm run agents:sync
 ```
+
+Copy the agent ID from the sync output into `OCTAVUS_AGENT_ID`.
 
 ### 4. Run Development Server
 
@@ -68,9 +73,10 @@ Open [http://localhost:3000](http://localhost:3000) and try asking the agent to:
 | `browser-navigate` | Navigate to a URL |
 | `browser-click` | Click an element by CSS selector |
 | `browser-fill` | Fill a form field with text |
-| `browser-screenshot` | Capture a screenshot of the page |
 | `browser-get-text` | Extract text content from page/element |
-| `browser-get-html` | Get HTML structure for analysis |
+| `browser-get-html` | Get page structure (headings, links, buttons, forms, inputs) |
+
+Screenshots come from the Octavus `screenshot` skill, which opens the URL in its own sandboxed browser rather than the Playwright browser above.
 
 ## Project Structure
 
@@ -99,7 +105,7 @@ Open [http://localhost:3000](http://localhost:3000) and try asking the agent to:
 
 1. **Session-based browsers** - Each chat session gets its own browser instance that persists across tool calls
 2. **Tool handlers** - Browser tools are implemented using Playwright and execute on your server
-3. **Screenshots** - Captured as base64 data URLs and returned in tool results
+3. **Screenshots** - Taken by the `screenshot` skill in an Octavus sandbox and shown in the chat as images
 4. **Auto-cleanup** - Inactive browser sessions are cleaned up after 10 minutes
 
 ## Customization
@@ -116,7 +122,19 @@ Edit `src/lib/agents/browser-agent.ts` to add new tools:
 },
 ```
 
-Don't forget to add the tool definition in `agents/browser-agent/protocol.yaml`.
+Don't forget to add the tool definition in `agents/browser-agent/protocol.yaml`, with a `title` for the label users see and a `description` written for the model:
+
+```yaml
+tools:
+  browser-scroll:
+    display: title
+    title: Scrolling
+    description: Scroll the current page vertically by a number of pixels.
+    parameters:
+      pixels:
+        type: number
+        description: Pixels to scroll (negative scrolls up)
+```
 
 ### Changing Browser Settings
 
@@ -152,13 +170,14 @@ For serverless deployments (Vercel, etc.), consider using a browser service like
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OCTAVUS_API_URL` | No | Octavus API URL (default: https://api.octavus.ai) |
+| `OCTAVUS_API_URL` | No | Octavus platform URL (default: https://octavus.ai) |
 | `OCTAVUS_API_KEY` | Yes | Your Octavus API key |
 | `OCTAVUS_AGENT_ID` | Yes | The agent ID for the browser agent |
+| `OCTAVUS_CLI_API_KEY` | No | API key for `agents:validate` and `agents:sync` (falls back to `OCTAVUS_API_KEY`) |
 
 ## Learn More
 
-- [Octavus Documentation](https://docs.octavus.ai)
+- [Octavus Documentation](https://octavus.ai/docs)
 - [Playwright Documentation](https://playwright.dev/docs/intro)
 
 ## License
